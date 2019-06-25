@@ -1,0 +1,68 @@
+\documentclass{standalone}
+
+\begin{document}
+	\subsection{Motivation}
+	Newton's method provides a linear way of approximating a zero of some function $f\in\mathbb{R}$ provided that either the first derivative of $f$ is known or a good estimate of it can be obtained. A single step of a Newton iterate is given by$$x_{k+1}=x_{k}-\frac{f(x_{k})}{f^{\prime}(x_{k})}$$and the process is carried out until either convergence or a user-specified tolerance level is reached. For most cases, the Newton iterates will converge quadratically to a zero of $f$ as long as a ``good'' starting point $x_{0}$ is chosen. However, other than issues of choosing an adequate $x_{0}$ or knowing $f^{\prime}$, an important challenge faced with Newton's method is the complexity of the function being evaluated. As the complexity increases, the probability of obtaining incorrect results due to rounding error, in general, also increases. For example, consider the function$$f(x)=(x-1)^{11}$$which involves $11$ flops for evaluation ($1$ for the subtraction and $10$ for the power operation). If we were instead to consider the expansion of $f(x)$, say $\tilde{f}(x)$, such that$$\tilde{f}(x)=x^{11}-11x^{10}+55x^{9}-165x^{8}+330x^{7}-462x^{6}+462x^{5}-330x^{4}+165 x^{3}-55x^{2}+11x-1$$then evaluation of the function will require $77$ flops. A similar analysis shows that the derivative of $f$ will require $11$ flops in factored form and $66$ flops in the expanded form. Combining everything together, Newton's method on $f$ in factored form will require $24$ flops while the expanded form will require $145$ flops to compute a single step in the iteration. It is easy to see that using $\tilde{f}$ over $f$ may lead to rounding errors as either the number of iterations are increased or the precision of the computation is decreased. Yet, there are also benefits in decreasing the working precision as, in general, lowering precision leads to increased performance. Thus, the CENA method has great potential in providing increased accuracy when working in lower precision while introducing little overhead if an FMA command is available and ``acceptable'' overhead otherwise.
+	\subsection{Implementation}
+	Three different implementations of Newton's method is used for experimental evaluation. The first is a Naive implementation with no compensation of errors and the Matlab code for it is given in \ref{appendix:naive}. The second implementation still doesn't do any error compensation but computes the values of the target polynomial using Horner's method for polynomial evaluation for increased accuracy. The Matlab code for this is given in \ref{appendix:horner}. Finally, the CENA method is implemented with a compensated Horner's scheme as presented in \cite{langlois2007ensure} along with the use of \texttt{ApproxTwoDiv} to compensate for the division. The CENA compensated Matlab code can be found in \ref{appendix:cena}. For all three methods all valued are computed in single precision floating point arithmetic. The functions being evaluated will be the algebraic expeansions of$$f^{n}(x)=(x-1)^{n}\quad\text{for}\:\:n=2,\dots,11.$$The choice of these functions arise from the fact that the only zero of $f^{n}$ is $1$ for all $n$ but there is an expectation of increasing errors as $n$ increases. For each $f^{n}$, two starting points of $x_{0}^{1}=2$ and $x_{0}^{2}=11/6$ is considered since the former is exactly representable and the latter is not. The combination of these functions and starting values should provide an hollistic view on the effectiveness of CENA. Additionally, for each function-starting point combination the naive method is run in double precision to test the hypothesis that ``the computed result'' of the CENA method ``is as accurate as if it was computed'' without any compensation. \cite{langlois2007ensure} \cite{langlois2001automatic} \cite{langlois2005solving}
+	\par
+	The evaluation conditions consists of running each method for $30$ iterations with $0$ tolerance to observe the overall behavior of the Newton iterates in each case. The choice of $30$ iterations is from \cite{langlois2004more} where Langlois gives results for a CENA compensated method for $f^{6}$ with starting point of $x_{0}=2$. In fact, the corrected iterates from \cite{langlois2004more} converge exactly to $1$ in $30$ iterations while the uncompensated single and double precision are less accurate and fail to terminate despite running over $100$ iterations. The $30$ iteration cutoff will also serve to verify these results.
+	\par
+	Overall, the iterates should monotonically converge to the zeroes of $f^{n}$ for all $n$ from either above or below $x_{0}$. Thus, one of the evaluation criteria is ``deviations from expected behavior'' (DFEB) which is a measure of the amount of times a run of Newton's method either diverges from monotonicity or overshoots the value of the target zero of the function. The second criterion is the ratio of the absolute error between the target zero and the smallest observed output from the Newton iterates to the absolute value of the target zero. This value is also known as the minimum relative error $re(x_{\min}^{i})$ which is given by$$re(x_{\min}^{i})=\frac{\abs{x_{*}^{i}-x_{\min}^{i}}}{\abs{x_{*}^{i}}}\quad\text{where}\:\:i=2,\dots,11\quad\text{and}\:\:x_{*}^{i}=1\:\text{for all}\:n$$and can be used to measure the forward stability of the CENA method.
+	\subsection{Results}
+	The results for $f^{n}$ when started on $x_{0}=2$ is given in Table~\ref{tab:1}. Similarly, the results for $f^{n}$ when started on $x_{0}=11/6$ is given in Table~\ref{tab:2}. For both tables, values in bold denote the lowest amount of relative error achieved for a row while the underlined values denote the second lowest amount of relative error achieved for a row.
+	\clearpage
+	\begin{table}
+	\centering
+	\begin{tabular*}{\textwidth}{ccccccccc}\toprule
+	& \multicolumn{8}{c}{Method}\\
+	\cmidrule{2-9}
+	& \multicolumn{2}{P{3cm}}{Naive} & \multicolumn{2}{P{3cm}}{Horner} & \multicolumn{2}{P{3cm}}{CENA} & \multicolumn{2}{P{3cm}}{Double}\\
+	\multicolumn{1}{P{0.73cm}}{n} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} \\
+	\midrule
+	 2 & 0 & 2.44e-4 & 0 & \underline{1.22e-4} & 0 & \textbf{0} & 0 & \textbf{0} \\
+	 3 & 0 & 4.50e-3 & 0 & 2.67e-3 & 4 & \underline{6.90e-4} & 0 & \textbf{5.57e-6} \\
+	 4 & 3 & 5.33e-3 & 0 & 1.87e-2 & 1 & \textbf{2.42e-5} & 0 & \underline{1.80e-4} \\
+	 5 & 1 & \underline{1.41e-2} & 1 & 1.82e-2 & 5 & 2.03e-2 & 0 & \textbf{1.26e-3} \\
+	 6 & 3 & 5.37e-2 & 4 & 5.32e-2 & 2 & \underline{3.57e-2} & 0 & \textbf{4.20e-3} \\
+	 7 & 6 & 8.76e-2 & 2 & 4.19e-2 & 3 & \textbf{7.58e-3} & 0 & \underline{9.78e-3} \\
+	 8 & 5 & 1.36e-1 & 4 & 6.93e-2 & 3 & \underline{3.97e-2} & 0 & \textbf{1.78e-2} \\
+	 9 & 4 & 5.29e-2 & 6 & 1.34e-1 & 5 & \underline{3.59e-2} & 0 & \textbf{2.77e-2} \\
+	10 & 3 & 2.88e-1 & 3 & 2.41e-1 & 7 & \underline{1.01e-1} & 0 & \textbf{4.38e-2} \\
+	11 & 4 & 1.03e-1 & 7 & \underline{3.88e-2} & 3 & 1.47e-1 & 0 & \textbf{5.76e-2}
+	\end{tabular*}
+	\caption{Results for $f^{n}$ with $x_{0}=2$.}\label{tab:1}
+	\end{table}
+	\begin{table}
+	\centering
+	\begin{tabular*}{\textwidth}{ccccccccc}\toprule
+	& \multicolumn{8}{c}{Method}\\
+	\cmidrule{2-9}
+	& \multicolumn{2}{P{3cm}}{Naive} & \multicolumn{2}{P{3cm}}{Horner} & \multicolumn{2}{P{3cm}}{CENA} & \multicolumn{2}{P{3cm}}{Double}\\
+	\multicolumn{1}{P{0.73cm}}{n} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} & \multicolumn{1}{P{1.50cm}}{DFEB} & \multicolumn{1}{P{1.50cm}}{re} \\
+	\midrule
+	 2 &  0 & \underline{2.11e-5} & 0 & 7.45e-5 & 0 & \textbf{0} & 0 & \textbf{0} \\
+	 3 &  0 & 6.47e-4 & 0 & 3.64e-3 & 3 & \underline{3.58e-3} & 0 &  \textbf{3.47e-6} \\
+	 4 &  4 & 5.36e-3 & 2 & 9.03e-3 & 2 & \underline{5.54e-3} & 0 &  \textbf{1.72e-4} \\
+	 5 &  1 & 3.49e-2 & 2 & \underline{1.51e-2} & 7 & \underline{1.51e-2} & 0 &  \textbf{1.05e-3} \\
+	 6 &  3 & 5.37e-2 & 4 & 5.31e-2 & 2 & \underline{3.57e-2} & 0 &  \textbf{4.09e-3} \\
+	 7 &  6 & \underline{7.75e-3} & 4 & 2.77e-2 & 2 & 3.88e-2 & 0 & \textbf{6.86e-3} \\
+	 8 &  1 & 4.25e-2 & 5 & 3.38e-2 & 4 & \underline{2.19e-2} & 0 & \textbf{8.56e-3} \\
+	 9 & 18 & 1.36e-1 & 6 & 3.42e-2 & 3 & \textbf{1.10e-2} & 0 & \underline{1.18e-2} \\
+	10 &  4 & 1.85e-1 & 4 & 2.01e-1 & 4 & \underline{1.12e-1} & 0 & \textbf{3.61e-3} \\
+	11 &  4 & 1.91e-1 & 7 & 1.96e-1 & 4 & \underline{1.47e-1} & 1 & \textbf{4.14e-2}
+	\end{tabular*}
+	\caption{Results for $f^{n}$ with $x_{0}=11/6$.}\label{tab:2}
+	\end{table}
+	\clearpage
+	\subsection{Analysis}\label{sec:analysis}
+	It can be clearly seen from both tables that computing the CENA corrections leads to much more accurate results compared to no correction at all. However, most of the time the CENA correction does not perform ``just as well'' as computing naively in double precision. For Table~\ref{tab:1} there is an outlier at $n=5$ where the single precision naive Newton performs the second best and $n=11$ where the single precision uncompensated Horner's method performs the second best. Similarly, outliers for Table~\ref{tab:2} occur at $n=5$ and $n=7$ where the Horner and naive methods both perform the second best, respectively. There is also an outlier with the DFEB measurement for naive Newton at $n=9$ for Table~\ref{tab:2}. This is because the iterates started producing \texttt{NaN} values after a few iterations which meant that each invalid iteration had to be counted as a deviation from expected behavior.
+	\par
+	When looking at the DFEB measurement, no strong correlation between DFEB and the relative error can be observed. In fact, all single precision methods display large deviations from the monotonic expected behavior for different situations. This in turn makes it difficult to predict how the lowest relative error would have turned if the experiment, for example, were run for $50$ iterations instead of the $30$. Overall, all methods when run for $30$ iterations do approach the zero with varying levels of success and rounding instability. The DFEB speaks mostly to how hard it is to choose a stopping criteria for an unstable Newton's method as letting the method run longer may either lead to more accurate or inaccurate results. Furthermore, it could also lead to either divergence or a total failure due to catastrophic rounding errors. The CENA method, from observations made when carrying out the experiments, is usually more stable in the sense that the other two single precision methods will either fail or diverge after around $100$ iterations while the CENA method can run for longer amounts and still converge to the zero from both sides.
+	\par
+	While the compensated Newton's method is better than naive implementations, it is certainly not more effective than doubling the working precision in the case for $f^{n}$ for almost all $n$. Furthermore, for $f^{6}$ it does not converge exactly to $x^{*}=1$ when starting with $x_{0}=2$ as shown in \cite{langlois2004more}. This could be due to possible errors introduced in the implementation of the correction method. However, assuming that there are no implementation issues then it is easy to see that CENA compensated Newton's method does not outperform doubling the precision. Additionally, no runtime analysis has been performed to measure the computational costs incurred for using compensation in single precision compared to just increasing the precision to double. While it is claimed that in \cite{langlois2004more} that the CENA method introduces minimal overhead for solving triangular systems using back substitution and Horner's method for polynomial evaluation, this analysis should be verified for Newton's method to get a truer understanding of the benefits of using the corrected Newton's method. 
+	\par
+	Finally, looking at the DFEB values allows for the criticism that the more accurate results could just be a product of ``luck.'' Arbritrarily changing the number of iterations the methods run for can lead to arbitrarily more or less accurate relative errors. While it is reasonable to use $30$ iterations since anything beyond it defeats the quadratic convergence gains expected from Newton's method, a more robust analysis could also take into the account the magnitude of these deviations from the monotonic behavior. Yet, from casual observation it can be said that the CENA compensations lead to a more stable algorithm.
+	\par
+	Overall, the CENA error compensating Newton's method is an improvement to naive and Horner evaluated Newton's methods when working in single precision. It is reasonable to expect that a CENA Newton's method when working in double precision should outperform its double precision naive counterpart. However, this has not been verified. Furthermore, using the CENA method is, in general, not as ``good'' as doubling the working precision of naive implementations.
+\end{document}

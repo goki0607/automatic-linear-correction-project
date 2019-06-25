@@ -1,0 +1,62 @@
+\documentclass{standalone}
+
+\begin{document}
+	\subsection{Error Free Transormations for $+,-\times$}
+	Re-writing the standard model of arithmetic gives us$$\delta=(\hat{x}\circ\hat{y})-fl(\hat{x}\circ\hat{y})$$where $\delta$ is the elementary rounding error in the computation of $\hat{x}\circ\hat{y}$. ``In particular, for $\circ\in\{+,-,\times\}$, the elementary rounding error'' $\delta\in\mathbb{F}$ ``and is computable using only the operations defined within $F$. \cite{langlois2005solving} Thus, for any operation $\circ\in\{+,-\times\}$ and a pair of inputs $(\hat{x},\hat{y})\in\mathbb{F}^{2}$, any algorithm that produces an output pair $(fl(\hat{x}\circ\hat{y}),\delta)\in\mathbb{F}^{2}$ such that$$\hat{x}\circ\hat{y}=fl(\hat{x}\circ\hat{y})+\delta$$is called an error free transformation, or EFT for short. \cite{langlois2005solving} \cite{ogita2005accurate} The main advantage of using an EFT is that ``no information is lost'' regarding the value and error from an elementary floating point operation as long as the operation is addition, subtraction or multiplication.
+	\par
+	Perhaps the most well known EFT is the summation algorithm by Knuth presented in \cite{knuth1998art}, which is also valid for subtraction by flipping the sign bit of one of the inputs. Defining $\oplus,\ominus,\otimes$ as the floating point operations for $+,-,\times$ respectively, the \texttt{TwoSum} algorithm is given below and its Matlab implementation can be found in \ref{appendix:twosum}.
+	\newline
+	\begin{minipage}[t][2.0in][t]{6.5in}
+	\begin{pseudocode}{Knuth's EFT algorithm for summation}{\:}
+		\PROCEDURE{TwoSum}{x,y}\\
+			z \GETS x\oplus y\\
+			s \GETS z\ominus x\\
+			\delta \GETS (x \ominus (z \ominus s)) \oplus (y \ominus s)\\
+			\RETURN{z,\delta}\\
+		\ENDPROCEDURE
+	\end{pseudocode}
+	\end{minipage}
+	\par
+	For the EFT of a multiplication it is first necessary to split the inputs into two parts such that a number $\hat{x}\in\mathbb{F}$ can be expressed as$$\hat{x}=\hat{x}_{h}+\hat{x}_{l}\quad\text{with}\:\:\abs{\hat{x}_{l}}\le\abs{\hat{x}_{h}}.$$If $\hat{x}$ has $m$ (mantissa) with $q$ bits, then define $r=\ceil*{q}$. The splitting algorithm by Dekker defined in \cite{dekker1971floating} will split $\hat{x}$ into the two parts as defined above where both parts will have at most $r-1$ non-zero bits. The \texttt{Split} algorithm is given below and its Matlab implementation can be found in \ref{appendix:split}.
+	\newline
+	\begin{minipage}[t][2.2in][t]{6.5in}
+	\begin{pseudocode}{Dekker's splitting algorithm}{\:}
+		\PROCEDURE{Split}{x,q}\\
+			r \GETS \ceil*{q}\\
+			z \GETS x \otimes (2^{r}+1)\\
+			x_{h} \GETS z \ominus (z \ominus x)\\
+			x_{l} \GETS x \ominus x_{h}\\
+			\RETURN{x_{h},x_{l}}\\
+		\ENDPROCEDURE
+	\end{pseudocode}
+	\end{minipage}
+	\par
+	Here a signed bit is used for the splitting which makes it possible to split an odd number of mantissa bits into two numbers of an even amount of bits. Using the splitting algorithm it is then possible to define Veltkamp's EFT for multiplication. \cite{dekker1971floating} The \texttt{TwoProduct} algorithm is given below and its Matlab implementation can be found in \ref{appendix:product}.
+	\newline
+	\begin{minipage}[t][2.1in][t]{6.5in}
+	\begin{pseudocode}{Veltkamp's multiplication algorithm}{\:}
+		\PROCEDURE{TwoProduct}{x,y,q}\\
+			z \GETS x \otimes y\\
+			\bracks{x_{h},x_{l}} \GETS Split(x,q)\\
+			\bracks{y_{h},y_{l}} \GETS Split(y,q)\\
+			\delta \GETS x_{l} \otimes y_{l} \ominus (((z \ominus x_{h} \otimes y_{h}) \ominus x_{l} \otimes y_{h}) \ominus x_{h} \otimes y_{l})\\
+			\RETURN{x,\delta}\\
+		\ENDPROCEDURE
+	\end{pseudocode}
+	\end{minipage}
+	\subsection{Approximation of the Error for $/$}
+	For division ``the elementary rounding error is generally not a floating point number'' \cite{langlois2005solving} because hardware floating point division is implemented using iterative algorithms that can accumulate error. Commonly used algorithms for division can be found in \cite{behrooz2000computer}. Thus, $\delta$ for division cannot be computed exactly and instead an approximation as defined in \cite{langlois2005solving} is used. Given a $(\hat{x},\hat{y})\in\mathbb{F}^{2}$ pair, the approximation algorithm for division produces an output pair $(fl(\hat{x}/\hat{y}),\bar{\delta})\in\mathbb{F}^{2}$ such that$$(\hat{x}/\hat{y})=fl(\hat{x}/\hat{y})+\bar{\delta}$$and $\bar{\delta}$ is bounded as$$\abs{\delta-\bar{\delta}}\le\epsilon_{M}\abs{\delta}$$where $\delta$ is the true error associated with division and $\bar{\delta}$ is an approximation of $\delta$. The idea here is that ``the computed approximation is as good as'' it can be expected to be ``in the working precision.'' \cite{langlois2005solving} The \texttt{ApproxTwoDiv} algorithm is given below and its Matlab implementation can be found in \ref{appendix:div}.
+	\newline
+	\begin{minipage}[t][2.0in][t]{6.5in}
+	\begin{pseudocode}{Langlois' approximate algorithm for division}{\:}
+		\PROCEDURE{TwoSum}{x,y,q}\\
+			z \GETS x\oslash y\\
+			\bracks{v,w} \GETS TwoProduct(z,y,q)\\
+			\bar{\delta} \GETS (x \ominus v \ominus w) \oslash y\\
+			\RETURN{z,\bar{\delta}}\\
+		\ENDPROCEDURE
+	\end{pseudocode}
+	\end{minipage}
+	\par
+	Notice that the \texttt{TwoSum} algorithm takes $6$ flops (i.e. floating point operations), the \texttt{TwoProduct} algorithm takes $17$ flops and the \texttt{ApproxTwoDiv} algorithm takes $21$ flops. The count of \texttt{TwoProduct} and \texttt{ApproxTwoDiv} can be reduced to $2$ and $6$ flops respectively if a Fused-Multiply-and-Add (FMA) instruction is available. Thus, the elementary error calculations are not time consuming operations as they ``do not use conditional branches nor attempt to access the mantissa'' and instead only introduce overhead in the form of more elementary floating point instructions. \cite{langlois2005solving}
+\end{document}

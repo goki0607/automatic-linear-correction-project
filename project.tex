@@ -1,0 +1,125 @@
+\documentclass [12pt]{article}
+\textheight     8.5in
+\textwidth      6.5in
+\topmargin        0in
+\oddsidemargin  0in
+\evensidemargin 0in
+\baselineskip 15pt
+
+\usepackage{amsfonts}
+\usepackage{amssymb,amsmath,amstext}
+\usepackage[page]{appendix}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{cite}
+\usepackage{color}
+\usepackage{diagbox}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{multirow}
+\usepackage{pseudocode}
+\usepackage{standalone}
+\usepackage{tabularx}
+
+\pagestyle{headings}
+\thispagestyle{empty}
+
+\definecolor{mygreen}{RGB}{28,172,0}
+\definecolor{mylilas}{RGB}{170,55,241}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\bracks}[1]{\lbrack#1\rbrack}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+\lstset{language=Matlab,%
+    %basicstyle=\color{red},
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{black}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol in the places where there is a space
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=9pt, % this defines how far the numbers are from the text
+    %emph=[1]{for,end,break},emphstyle=[1]\color{red}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},    
+}
+
+\title{Automatic Linear Correction of Rounding Errors\\
+	   for Newton's Method}
+\author{Goktug Saatcioglu}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+This project explores the application of the CENA method on Newton's method for one-dimensional zero finding through experimental evaluation. The study shows that, in general, the CENA method provides accuracy improvements over naive implementations but is not as good as doubling the working precision. Possible areas for the uses of the CENA method are also highlighted.
+\end{abstract}
+
+\bigskip
+
+\section{Introduction}
+\label{sec:intro}
+\input{tex/intro.tex}
+\section{Floating Point Arithmetic}
+\label{sec:fpa}
+\input{tex/fpcomp.tex}
+\section{Error Free Transformations}
+\label{sec:eft}
+\input{tex/eft.tex}
+\section{The CENA Method}
+\label{sec:cena}
+\input{tex/cena.tex}
+\section{Newton's Method}
+\label{sec:newton}
+\input{tex/newton.tex}
+\section{Evaluation}
+\label{sec:eval}
+\input{tex/eval.tex}
+\section{Conclusion}
+\label{sec:conc}
+\input{tex/conc.tex}
+
+\newpage
+\begin{appendices}
+	\section{Matlab Code for EFTs}
+	\subsection{TwoSum}
+	\label{appendix:twosum}
+	\lstinputlisting{code/two_sum.m}
+	\subsection{Split}
+	\label{appendix:split}
+	\lstinputlisting{code/split_high_low.m}
+	\subsection{TwoProduct}
+	\label{appendix:product}
+	\lstinputlisting{code/two_product.m}
+	\section{Matlab Code for Division Approximation}
+	\subsection{Approximate Division}
+	\label{appendix:div}
+	\lstinputlisting{code/approx_two_div.m}
+	\section{Matlab Code for Newton's Method}
+	\subsection{Naive Newton's Method}
+	\label{appendix:naive}
+	\lstinputlisting{code/newton_naive.m}
+	\subsection{Horner's Evaluated Newton's Method}
+	\label{appendix:horner}
+	\lstinputlisting{code/newton_horner.m}
+	\subsection{CENA Compensated Newton's Method}
+	\label{appendix:cena}
+	\lstinputlisting{code/newton_cena.m}
+\end{appendices}
+
+\newpage
+\bibliography{mybib}
+\bibliographystyle{plain}
+
+\end{document}
