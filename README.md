@@ -1,0 +1,3 @@
+# Automatic Linear Correction of Rounding Errors Project
+
+This is the public repository for my (Goktug Saatcioglu) Spring 2018 Numerical Computing Project. There are various Matlab programs in the code folder that can be run to test various methods (see project.pdf). If you wish to recompile the tex file you may do so using make_project.sh. While running pdflatex, if you encounter any errors relating to the bibliography then just hit enter.
